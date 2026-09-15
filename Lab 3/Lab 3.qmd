@@ -1,0 +1,124 @@
+---
+title: "Lab 3"
+format: html
+editor: visual
+embed-resources: true
+---
+
+## File Upload
+
+```{r}
+met_all <- read.csv("~/PM 556/PM556-/met_all.gz")
+```
+
+## Question 2
+
+Check the dimensions, headers, footers. How many columns, rows are there?
+
+```{r}
+dim(met_all)
+head(met_all)
+tail(met_all)
+```
+
+## Question 3
+
+Take a look at the variables.
+
+```{r}
+str(met_all)
+```
+
+## Question 4
+
+Take a closer look at the key variables.
+
+```{r}
+table(met_all$year)
+table(met_all$day)
+table(met_all$hour)
+summary(met_all$temp)
+summary(met_all$elev)
+summary(met_all$wind.sp)
+
+# Check the data for potential missing values 
+
+met_all$elev[met_all$elev==9999.0] <- NA
+summary(met_all$elev)
+
+# Remove observations that contain the minimum temperature of -40C. 
+
+met_all <- met_all[met_all$temp > -40, ]
+met2 <- met_all[order(met_all$temp), ]
+head(met2)
+```
+
+## Question 5
+
+Check the data against an external data source. Fix any problems that arise in your checks.
+
+```{r}
+met_all <- met_all[met_all$temp > -15, ]
+met2 <- met_all[order(met_all$temp), ]
+head(met2)
+
+# Summarize that we removed temperatures colder than -15C. The new dataset has a minimum temp of -3C, which is reasonable.
+```
+
+## Question 6
+
+Calculate summary statistics. Select the weather station with maximum elevation; look at the correlation between temperature and wind speed; look at the correlation between temperature and wind speed with hour and day of the month.
+
+```{r}
+elev <- met_all[met_all$elev == max(met_all$elev, na.rm = TRUE), ]
+summary(elev)
+
+
+cor(elev$temp, elev$wind.sp, use="complete")
+cor(elev$temp, elev$hour, use="complete")
+cor(elev$wind.sp, elev$day, use="complete")
+cor(elev$wind.sp, elev$hour, use="complete")
+cor(elev$temp, elev$day, use="complete")
+```
+
+## Question 7
+
+Exploratory graphs.
+
+```{r}
+hist(met_all$elev, breaks=100)
+hist(met_all$temp)
+hist(met_all$wind.sp)
+
+
+# Install Package and run pipe operator 
+
+library(leaflet)
+library(magrittr)
+
+# Look at where the weather station with highest elevation is located
+
+leaflet(elev) %>%
+  addProviderTiles('OpenStreetMap') %>% 
+  addCircles(lat=~lat,lng=~lon, opacity=1, fillOpacity=1, radius=100)
+
+# Look at the time series of temperature and wind speed at this location. For this we will need to create a date-time variable for the x-axis.
+
+library(lubridate)
+elev$date <- with(elev, ymd_h(paste(year, month, day, hour, sep= ' ')))
+summary(elev$date)
+elev <- elev[order(elev$date), ]
+head(elev)
+
+# Plot the time series of temperature and wind speed.
+
+plot(elev$date, elev$temp, type='l')
+plot(elev$date, elev$wind.sp, type='l')
+```
+
+## Question 8
+
+I don't necessarily ave questions regarding the data, however here are two that seemed interesting:
+
+1.  Why do some temperature readings show extreme values like `-40°C` or `-17.2°C`?
+2.  Were all stations using the same hardware and calibration standards?

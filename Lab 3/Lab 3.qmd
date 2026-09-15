@@ -3,6 +3,7 @@ title: "Lab 3"
 format: html
 editor: visual
 embed-resources: true
+fig-height: 10
 ---
 
 ## File Upload

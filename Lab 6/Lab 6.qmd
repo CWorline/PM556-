@@ -1,0 +1,256 @@
+---
+title: "Lab 6"
+format: html
+editor: visual
+embed-resources: true
+fig-height: 10
+---
+
+## Set Up
+
+Setup packages & Load in the cleaned data from the USCbiostats/data-science-data repository.
+
+```{r}
+# Read in Medical Transcriptions
+library(readr)
+library(dplyr)
+mt_samples <- read_csv("https://raw.githubusercontent.com/USCbiostats/data-science-data/master/00_mtsamples/mtsamples.csv")
+mt_samples <- mt_samples |>
+  select(description, medical_specialty, transcription)
+
+head(mt_samples)
+```
+
+## Question 1
+
+Use the count() function from dplyr to figure out how many different categories we have in the data. Are these categories related? Overlapping? Evenly distributed?
+
+```{r}
+# What specialties do we have?
+mt_samples %>%
+  count(medical_specialty, sort = TRUE)
+```
+
+## Question 2
+
+Tokenize the the words in the transcription column Count the number of times each token appears. Visualize the top 20 most frequent words
+
+# Summary
+
+Explain what we see from this result. Does it makes sense? What insights (if any) do we get?
+
+\- The top 20 most frequent words are dominated by common stop words such as “the,” “and,” “to,” “of,” and “in”. A few clinically relevant words like “patient,” “right,” and “no” also appear, reflecting typical phrasing in medical documentation. However, the insights at this stage are limited because stop words overwhelm the medical vocabulary.
+
+```{r}
+# Tokenize Data
+library(tidytext)
+tokens <- mt_samples %>%
+  unnest_tokens(word, transcription)
+
+# Count word frequency
+word_counts <- tokens %>%
+  count(word, sort = TRUE)
+
+# Visualize the top 20 most frequent words
+library(dplyr)
+library(ggplot2)
+library(tidytext)
+
+mt_samples %>%
+  unnest_tokens(token, transcription) %>%
+  count(token) %>%
+  top_n(20, n) %>%
+  ggplot(aes(n, token)) +
+  geom_col() +
+  labs(title = "Top 20 Most Frequent Words",
+       x = "Frequency",
+       y = "Word")
+```
+
+## Question 3
+
+Re-do the visualization but remove stop words before making it Bonus points if you remove numbers as well.
+
+# Summary
+
+What do we see now that we have removed stop words? Does it give us a better idea of what the text is about?
+
+\- After removing stop words and numbers, the most frequent words now represent meaningful medical content rather than generic English words. Terms such as “patient,” “history,” “procedure,” “performed,” “pain,” “incision,” “artery,” and “anesthesia” appear most often, which aligns with the clinical structure of the dataset. These words highlights the themes in the transcriptions, including patient history, surgical procedures, anatomical descriptions, and clinical assessments. Removing the stop words provides a clearer understanding of what the text is actually reveals.
+
+```{r}
+library(tidytext)
+library(dplyr)
+library(stringr)
+library(ggplot2)
+
+ # Remove stop words
+clean_tokens <- mt_samples %>%
+  unnest_tokens(word, transcription) %>%
+  anti_join(stop_words, by = c("word"))|>
+  count(word, sort = TRUE)
+
+# Remove numbers
+clean_tokens <- clean_tokens %>%
+  filter(!str_detect(word, "^[0-9]+$"))
+
+# Visualize top 20
+clean_tokens %>%
+  top_n(20, n) %>%
+  ggplot(aes(n, word)) +
+  geom_col() +
+  labs(title = "Top 20 Most Frequent Words (Stop Words & Numbers Removed)",
+       x = "Frequency",
+       y = "Word")
+
+```
+
+## Question 4
+
+Repeat question 2, but this time tokenize into bi-grams. How does the result change if you look at tri-grams?
+
+```{r}
+library(dplyr)
+library(tidytext)
+library(stringr)
+library(ggplot2)
+
+# Create bi-grams
+bigrams <- mt_samples %>%
+  unnest_tokens(bigram, transcription, token = "ngrams", n = 2)
+
+# Remove bi‑grams containing stop words 
+bigrams <- mt_samples %>%
+  unnest_tokens(word, transcription) %>%
+  anti_join(stop_words, by = c("word"))|>
+  count(word, sort = TRUE)
+
+# Remove bi-grams containing numbers
+bigrams <- bigrams %>%
+  filter(!str_detect(word, "^[0-9]+$"))
+
+# Visualize top 20 bi‑grams
+bigrams %>%
+  top_n(20, n) %>%
+  ggplot(aes(n, word)) +
+  geom_col() +
+  labs(title = "Top 20 Most Frequent Bi-grams (Cleaned)",
+       x = "Frequency",
+       y = "Bi-gram")
+
+
+# Create tri-grams
+trigrams <- mt_samples %>%
+  unnest_tokens(trigram, transcription, token = "ngrams", n = 3)
+
+# Remove bi‑grams containing stop words 
+trigrams <- mt_samples %>%
+  unnest_tokens(word, transcription) %>%
+  anti_join(stop_words, by = c("word"))|>
+  count(word, sort = TRUE)
+
+# Remove bi-grams containing numbers
+trigrams <- trigrams %>%
+  filter(!str_detect(word, "^[0-9]+$"))
+
+# Visualize top 20 bi‑grams
+trigrams %>%
+  top_n(20, n) %>%
+  ggplot(aes(n, word)) +
+  geom_col() +
+  labs(title = "Top 20 Most Frequent Tri-grams (Cleaned)",
+       x = "Frequency",
+       y = "Tri-gram")
+```
+
+## Question 5
+
+Using the results you got from Question 4, pick a word and count the words that appear before and after it.
+
+```{r}
+library(dplyr)
+library(tidyr)
+
+# ReCreate Bigrams
+bigrams <- mt_samples %>%
+  unnest_tokens(bigram, transcription, token = "ngrams", n = 2)
+
+# Split bi‑grams into two words
+bigrams_split <- bigrams %>%
+  separate(bigram, into = c("word1", "word2"), sep = " ")
+
+# Words that appear BEFORE “pain”
+bigrams_split %>%
+  filter(word2 == "pain") %>%
+  count(word1, sort = TRUE)
+
+# Words that appear AFTER "pain"
+bigrams_split %>%
+  filter(word1 == "pain") %>%
+  count(word2, sort = TRUE)
+```
+
+## Question 6
+
+Which words are most used in each of the specialties? You can use group_by() and top_n() from dplyr to have the calculations be done within each specialty. Remember to remove stop words. What are the 5 most-used words for each specialty?
+
+```{r}
+library(dplyr)
+library(tidytext)
+library(stringr)
+
+# Retokenize Dataset w/ specialties
+tokens_specialty <- mt_samples %>%
+  unnest_tokens(word, transcription)
+
+# Remove stop words
+tokens_specialty <- tokens_specialty %>%
+  anti_join(stop_words, by = "word")
+
+# Remove numbers 
+tokens_specialty <- tokens_specialty %>%
+  filter(!str_detect(word, "^[0-9]+$"))
+
+head(tokens_specialty)
+
+# Count words per specialty
+word_counts_specialty <- tokens_specialty %>%
+  group_by(medical_specialty, word) %>%
+  summarise(n = n(), .groups = "drop")
+
+head(word_counts_specialty)
+
+# Get TOP 5 words per specialty
+top5_words_specialty <- word_counts_specialty %>%
+  group_by(medical_specialty) %>%
+  top_n(5, n)
+
+head(top5_words_specialty)
+```
+
+## Question 7
+
+Find your own insight in the data:
+
+See if certain words are used more in some specialties than others- resolved using TF - IDF
+
+```{r}
+# Set Up Data set 
+tokens_specialty <- mt_samples %>%
+  unnest_tokens(word, transcription) %>%
+  anti_join(stop_words, by = "word") %>%
+  filter(!str_detect(word, "^[0-9]+$")) %>%
+  count(medical_specialty, word, sort = TRUE)
+
+# Bind the two Data sets
+tfidf_specialty <- top5_words_specialty %>%
+  bind_tf_idf(word, medical_specialty, n)
+
+# Top 5 most frequent words (removing ties)
+top5_tfidf <- tfidf_specialty %>%
+  group_by(medical_specialty) %>%
+  slice_max(tf_idf, n = 5)
+
+head(tokens_specialty)
+head(tfidf_specialty)
+head(top5_tfidf)
+```

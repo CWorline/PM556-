@@ -49,11 +49,10 @@ met <- met[!duplicated(met$USAF), ]
 
 ## Question 1
 
-What is the median station in terms of temperature, wind speed, and atmospheric pressure? Look for the three weather stations that best represent continental US using the quantile() function. 
+What is the median station in terms of temperature, wind speed, and atmospheric pressure? Look for the three weather stations that best represent continental US using the quantile() function.
 
-Do these three coincide?
-    - The three representative stations did not coincide, because temperature, wind speed, and atmospheric pressure vary independently across geography and time.
-    
+Do these three coincide? - The three representative stations did not coincide, because temperature, wind speed, and atmospheric pressure vary independently across geography and time.
+
 ```{r}
 # Compute median values across all US observations
 med_temp  <- quantile(met$temp, probs = 0.5, na.rm = TRUE)
@@ -108,9 +107,9 @@ head(state_medians)
 
 ```
 
-## Question 3 
+## Question 3
 
-For each state, identify the station that is closest to the mean latitude and longitude for stations in that state. Combining these with the coordinates you identified in the previous question, use leaflet() to visualize all ~100 points in the same figure, applying different colors for those identified in this question.
+For each state, identify the station that is closest to the mean latitude and longitude for stations in that state. Combining these with the coordinates you identified in the previous question, use leaflet() to visualize all \~100 points in the same figure, applying different colors for those identified in this question.
 
 ```{r}
 # group the mean lat/lon per state
@@ -151,18 +150,9 @@ leaflet() %>%
 
 Compute each state’s average temperature and use that to classify them according to the following criteria:
 
-low: temp < 20
-Mid: temp >= 20 and temp < 25
-High: temp >= 25
-Now generate a large summary table with states/observations split into the three categories listed above. For each group, compute the following:
+low: temp \< 20 Mid: temp \>= 20 and temp \< 25 High: temp \>= 25 Now generate a large summary table with states/observations split into the three categories listed above. For each group, compute the following:
 
-Number of states
-Number of entries (records)
-Number of NA entries
-Number of stations
-Mean temperature
-Mean wind-speed
-Mean atmospheric pressure
+Number of states Number of entries (records) Number of NA entries Number of stations Mean temperature Mean wind-speed Mean atmospheric pressure
 
 ```{r}
 # Compute each state’s average temperature

@@ -1,0 +1,130 @@
+---
+title: "Lab 7"
+author: "Caitlin Worline"
+format: html
+editor: visual
+embed-resources: true
+fig-height: 10
+---
+
+## Question 1
+
+```{r}
+library(xml2)
+library(stringr)
+
+# Downloading the website
+website <- xml2::read_html("https://pubmed.ncbi.nlm.nih.gov/?term=sars-cov-2")
+
+# Finding the counts
+counts <- xml2::xml_find_first(website, "//span[@class='value']")
+
+# Turning it into text
+counts <- as.character(counts)
+
+# Extracting the data using regex
+totalcount <- stringr::str_extract(counts, "[0-9,.]+")
+
+# Removing commas/dots
+totalcount <- gsub("[,.]", "", totalcount)
+
+totalcount <- as.numeric(totalcount)
+print(totalcount)
+```
+
+
+## Question 2
+
+```{r}
+# read in text, each line is a separate character
+abstracts <- readLines("C:/Users/caitl/Downloads/abstract-sars-cov-2-set.txt", warn = FALSE)
+# combine all text into one character
+abstracts <- paste(abstracts, collapse = '\n')
+# split the text whenever 3 new lines occur in a row (indicating two blank lines)
+abstracts <- unlist(strsplit(abstracts, split = '\n\n\n'))
+# replace any remaining "\n" symbols with spaces
+abstracts <- gsub("\n", " ", abstracts)
+# replace multiple spaces with single space
+abstracts <- gsub(" +", " ", abstracts)
+```
+
+## Question 3
+
+# Summary
+    - To improve the results, I would:
+• Normalize institution names (e.g., collapse “UCSD”, “UC San Diego”, and “University of California San Diego”).
+
+• Remove department-level text such as “School of Medicine” or “Department of…”.
+
+• Use a more restrictive regular expression that requires a comma or end-of-line after the institution name.
+
+• Apply additional cleaning steps such as lowercasing and trimming whitespace.
+
+These improvements would produce a more accurate and interpretable distribution of institutions.
+
+```{r}
+library(stringr)
+
+institution <- str_extract_all(
+  abstracts,
+  "([A-Z][A-Za-z& ]+ University|University of [A-Z][A-Za-z& ]+|[A-Z][A-Za-z& ]+ Institute of [A-Za-z& ]+)"
+)
+
+institution <- unlist(institution)
+table(institution)
+
+sort(table(institution), decreasing = TRUE)[1:10]
+
+```
+
+## Question 4
+
+```{r}
+abstracts <- readLines("C:/Users/caitl/Downloads/abstract-sars-cov-2-set.txt", warn = FALSE)
+abstracts <- paste(abstracts, collapse = '\n')
+abstracts <- unlist(strsplit(abstracts, split = '\n\n\n'))
+
+library(stringr)
+
+# Extract the whole first line
+journal_raw <- str_extract(abstracts, "^[0-9]+\\.\\s*(.+)")
+
+# Remove the number and period
+journal <- sub("^[0-9]+\\.\\s*", "", journal_raw)
+
+
+titles <- sapply(abstracts, function(x){
+  unlist(strsplit(x, split = "\n\n"))[2]
+}, USE.NAMES = FALSE)
+
+# Clean leftover line breaks
+titles <- gsub("\n", " ", titles)
+titles <- gsub(" +", " ", titles)
+
+authors <- sapply(abstracts, function(x){
+  unlist(strsplit(x, split = "\n\n"))[3]
+}, USE.NAMES = FALSE)
+
+authors <- gsub("\n", " ", authors)
+authors <- gsub(" +", " ", authors)
+
+affiliations <- str_extract(
+  abstracts,
+  "(?s)(?<=Author information:\n).+?(?=\n\n)"
+)
+
+affiliations <- gsub("\n", " ", affiliations)
+affiliations <- gsub(" +", " ", affiliations)
+
+papers <- data.frame(
+  journal = journal,
+  title = titles,
+  authors = authors,
+  affiliations = affiliations,
+  stringsAsFactors = FALSE
+)
+
+knitr::kable(papers[1:5, ])
+
+```
+

@@ -32,7 +32,6 @@ totalcount <- as.numeric(totalcount)
 print(totalcount)
 ```
 
-
 ## Question 2
 
 ```{r}
@@ -51,7 +50,11 @@ abstracts <- gsub(" +", " ", abstracts)
 ## Question 3
 
 # Summary
-    - To improve the results, I would:
+
+```         
+- To improve the results, I would:
+```
+
 • Normalize institution names (e.g., collapse “UCSD”, “UC San Diego”, and “University of California San Diego”).
 
 • Remove department-level text such as “School of Medicine” or “Department of…”.
@@ -127,4 +130,3 @@ papers <- data.frame(
 knitr::kable(papers[1:5, ])
 
 ```
-

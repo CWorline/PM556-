@@ -1,0 +1,161 @@
+---
+title: "Lab 8"
+author: "Caitlin Worline"
+format: html
+editor: visual
+embed-resources: true
+fig-height: 10
+---
+
+## Problem 1: Vectorization
+
+This function finds the maximum value of each column of a matrix. Then check the speed of the two functions, as you did above.
+
+```{r}
+fun1 <- function(n = 100, k = 4, lambda = 4) {
+  x <- NULL
+  
+  for (i in 1:n){
+    x <- rbind(x, rpois(k, lambda))    
+  }
+  
+  return(x)
+}
+
+fun1alt <- function(n = 100, k = 4, lambda = 4) {
+  matrix(
+    rpois(n * k, lambda),
+    nrow = n,
+    ncol = k
+  )
+}
+```
+
+2.  check the speed of the two functions with the following code
+
+```{r}
+# Check dimensions
+dim(fun1())
+dim(fun1alt())
+
+# Compare distributions
+summary(as.vector(fun1()))
+summary(as.vector(fun1alt()))
+
+# Benchmark
+microbenchmark::microbenchmark(
+  fun1(),
+  fun1alt()
+)
+```
+
+## Problem 2
+
+This function finds the maximum value of each column of a matrix.
+
+```{r}
+# Data Generating Process (10 x 10,000 matrix)
+set.seed(1234)
+x <- matrix(rnorm(1e4), nrow=10)
+
+# Find each column's max value
+fun2 <- function(x) {
+  apply(x, 2, max)
+}
+
+library(matrixStats)
+
+fun2alt <- function(x) {
+  matrixStats::colMaxs(x)
+}
+
+# Check equality
+all.equal(
+  fun2(x),
+  fun2alt(x)
+)
+
+# Benchmark
+microbenchmark::microbenchmark(
+  fun2(x),
+  fun2alt(x)
+)
+```
+
+## Problem 3: Parallelization
+
+Edit this function to parallelize the lapply loop, using whichever method you prefer. Rather than specifying the number of cores to use, use the number given by the ncpus argument, so that we can test it with different numbers of cores later.
+
+```{r}
+my_boot <- function(dat, stat, R, ncpus = 1L) {
+  
+  # Getting the random indices
+  n <- nrow(dat)
+  idx <- matrix(sample.int(n, n*R, TRUE), nrow=n, ncol=R)
+  
+  # THIS FUNCTION NEEDS TO BE PARALELLIZED
+# Create cluster
+  
+  library(parallel)
+  
+  cl <- makeCluster(ncpus)
+
+  # Export objects to workers
+  clusterExport(
+    cl,
+    c("dat", "idx", "stat"),
+    envir = environment()
+  )
+
+  # Parallel bootstrap
+  ans <- parLapply(
+    cl,
+    seq_len(R),
+    function(i) {
+      stat(dat[idx[, i], , drop = FALSE])
+    }
+  )
+
+  # Shut down cluster
+  stopCluster(cl)
+  
+  # Converting the list into a matrix
+  ans <- do.call(rbind, ans)
+
+  return(ans)
+}
+```
+
+2.  Once you have a version of the my_boot() function that runs on multiple cores, check that it provides accurate results by comparing it to a parametric model.
+
+```{r}
+# Bootstrap of an OLS
+my_stat <- function(d) coef(lm(y ~ x, data=d))
+
+# DATA SIM
+set.seed(1)
+n <- 500; R <- 1e4
+
+x <- cbind(rnorm(n)); y <- x*5 + rnorm(n)
+
+# Checking if we get something similar as lm
+ans0 <- confint(lm(y~x))
+ans1 <- my_boot(dat = data.frame(x, y), my_stat, R = R, ncpus = 2L)
+
+# You should get something like this
+t(apply(ans1, 2, quantile, c(.025,.975)))
+##                   2.5%      97.5%
+## (Intercept) -0.1372435 0.05074397
+## x            4.8680977 5.04539763
+ans0
+##                  2.5 %     97.5 %
+## (Intercept) -0.1379033 0.04797344
+## x            4.8650100 5.04883353
+```
+
+3.  Check whether your version actually goes faster when it’s run on multiple cores (since this might take a little while to run, we’ll use system.time and just run each version once, rather than microbenchmark, which would run each version 100 times, by default)
+
+```{r}
+system.time(my_boot(dat = data.frame(x, y), my_stat, R = 4000, ncpus = 1L))
+system.time(my_boot(dat = data.frame(x, y), my_stat, R = 4000, ncpus = 2L))
+```

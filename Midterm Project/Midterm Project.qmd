@@ -1,0 +1,273 @@
+---
+title: "Midterm Project"
+author: "Caitlin Worline"
+format: html
+editor: visual
+embed-resources: true
+fig-height: 10
+---
+
+## Introduction
+
+Understanding patterns in crime is essential for resource allocation, public safety planning, and evaluating the effectiveness of policing strategies. The Los Angeles Police Department (LAPD) publishes weekly COMPSTAT profiles that summarize crime trends across geographic divisions using National Incident-Based Reporting System (NIBRS) classifications. These reports provide counts of major crime categories—including **homicide**, **rape**, **robbery**, **aggravated assault**, **burglary**, **motor vehicle theft**, **theft from motor vehicles** (**TFMV**), and **larceny/theft offenses**—along with comparisons across recent reporting periods and year‑to‑date totals.
+
+For this project, I focus on the person and property crimes in the West Bureau, which includes several LAPD areas such as **Hollywood**, **Wilshire**, **Pacific**, **West LA**, and **Olympic**. The dataset used in this analysis comes from the COMPSTAT West Bureau Profile for the reporting period **September 20, 2026** to **October 17, 2026**, which includes crime counts for three consecutive 28‑day periods: (**07/26/26** to **08/22/26**), (**08/23/26** to **09/19/26)**, and (**09/20/26** to **10/17/26**). Although the COMPSTAT report also provides year‑to‑date crime totals for 2026, 2025, and 2024, this analysis focuses specifically on the weekly comparisons to examine short‑term fluctuations in crime across these three periods.
+
+The question guiding this project is:
+
+**How did major crime categories in the West Bureau change across the three most recent COMPSTAT reporting periods?**
+
+## Data Preparation
+
+The data used in this project were obtained from the Los Angeles Police Department (LAPD) COMPSTAT Operations-West Bureau Profile for the reporting period September 20, 2026 through October 17, 2026. The original crime statistics were available in PDF format and contained bureau-level summaries of person and property crimes across three consecutive 28-day reporting periods. To prepare the data for analysis, the Operations-West Bureau summary table was manually extracted from the PDF and converted into a CSV file for use in R.
+
+After importing the CSV file into R, the dataset was inspected to verify variable types, identify redundant variables, and ensure consistency across observations. The initial dataset contained **14 variables** and **11 observations** representing major crime categories. During the cleaning process, one duplicate reporting-period column was identified. The duplicated variable appeared twice because it was used in two separate COMPSTAT percentage-change calculations. Since both columns contained identical values, the duplicate variable was removed to simplify the dataset.
+
+To improve readability, several variables were renamed using simpler and more intuitive labels. The three reporting periods were renamed as **Period 1** (July 26, 2026 through August 22, 2026), **Period 2** (August 23, 2026 through September 19, 2026), and **Period 3** (September 20, 2026 through October 17, 2026). Variables describing percentage changes between reporting periods and year-to-date statistics were also renamed for clarity. The dataset was then reorganized so that crime counts, percentage changes, and year-to-date statistics were grouped logically.
+
+Finally, to facilitate visualization, the reporting-period crime counts were transformed from a wide format to a tidy long format using the *pivot_longer()* function. This transformation converted the separate reporting-period columns into a single reporting-period variable and a corresponding crime-count variable. Lastly, the generic period labels were replaced with their associated date ranges (07/26/26–08/22/26, 08/23/26–09/19/26, and 09/20/26–10/17/26) to improve interpretability in subsequent visualizations.
+
+```{r}
+library(tidyverse)
+library(dplyr)
+
+# Load Dataset
+crimestats <- read.csv("~/PM 556/Midterm Project/Cleaned Files/compsts_crime_stats.csv")
+
+# Remove duplicated columns
+crimestats <- crimestats %>%
+  select(-period_2026_08_23_to_09_19_count_2)
+
+# Rename variables
+crimestats <- crimestats %>%
+  rename(
+    period1 = period_2026_07_26_to_08_22_count,
+    period2 = period_2026_08_23_to_09_19_count,
+    period3 = period_2026_09_20_to_10_17_count,
+    pct_change_p2_p1 = period_change_pct_2,
+    pct_change_p3_p2 = period_change_pct,
+    ytd_2026 = ytd_2026_nibrs,
+    ytd_2025 = ytd_2025_nibrs,
+    ytd_pct_change = ytd_change_pct,
+    ytd_2024 = ytd_2024_nibrs_srs
+  )
+
+# Reorder variables
+crimestats <- crimestats %>%
+  select(
+    area,
+    crime_group,
+    offense,
+    period1,
+    period2,
+    period3,
+    pct_change_p2_p1,
+    pct_change_p3_p2,
+    ytd_2024,
+    ytd_2025,
+    ytd_2026,
+    ytd_pct_change,
+    ytd_2026_nibrs_comparison
+  )
+
+# Create a new long-format for dataset visuals
+crimestats_long <- crimestats %>%
+  select(offense, period1, period2, period3) %>%
+  pivot_longer(
+    cols = c(period1, period2, period3),
+    names_to = "period",
+    values_to = "crime_count"
+  )
+
+# Rename the periods duration 
+crimestats_long <- crimestats_long %>%
+  mutate(
+    period = recode(
+      period,
+      "period1" = "07/26-08/22",
+      "period2" = "08/23-09/19",
+      "period3" = "09/20-10/17"
+    )
+  )
+```
+
+## Exploratory Analysis
+
+The final dataset consisted of 11 observations representing major crime categories reported by the Los Angeles Police Department (LAPD) Operations-West Bureau. These categories included **person crimes** (Homicide, Rape, Robbery, and Aggravated Assaults), **property crimes** (Burglary/Breaking & Entering, Motor Vehicle Theft, Theft from Motor Vehicles \[TFMV\], and Larceny Theft Offenses), and **aggregate totals** for person crimes, property crimes, and overall crimes. Crime counts were reported across three consecutive 28-day reporting periods spanning **July through October 2026**.
+
+The dataset contains both categorical and quantitative variables. The **categorical variables** include **crime_group**, which classifies offenses as person crimes, property crimes, or totals, and offense, which identifies the specific crime category. **Quantitative variables** include **crime counts** for each reporting period (Period 1, Period 2, and Period 3), **percentage change variables** measuring changes between reporting periods, and **year-to-date crime statistics**. Although year-to-date statistics were retained during data preparation, the primary focus of this analysis is the comparison of crime counts across the three reporting periods.
+
+**Figure 1** provides an overview of crime counts across offense categories during each reporting period. Considerable variation exists across crime types, with property crime categories generally exhibiting substantially higher counts than person crime categories. **Larceny Theft Offenses** consistently recorded the **highest** number of **incidents** among individual offense categories, while **Homicide** recorded the **fewest incidents**. The figure also demonstrates the wide range of crime frequencies reported within the West Bureau.
+
+```{r}
+# Visualize Crime Counts across Periods 
+ggplot(
+  crimestats_long,
+  aes(
+    x = period,
+    y = crime_count,
+    fill = period
+  )
+) +
+  geom_col() +
+  facet_wrap(
+    ~ offense,
+    scales = "free_y"
+  ) +
+  labs(
+    title = "Crime Counts Across Reporting Periods by Offense",
+    x = "Reporting Period",
+    y = "Crime Count",
+    fill = "Reporting Period"
+  ) +
+  theme_minimal() +
+  theme(
+    axis.text.x = element_text(
+      angle = 45,
+      hjust = 1
+    ),
+    plot.title = element_text(
+      hjust = 0.5,
+      face = "bold"
+    ),
+    legend.position = "right"
+  )
+```
+
+## Preliminary Results
+
+To address the primary research question, crime counts and percentage changes were examined across the three reporting periods. **Table 1** summarizes crime counts by offense category for each reporting period. Property crime categories consistently reported substantially higher incident counts than person crime categories. Among individual offenses, **Larceny Theft Offenses** recorded the highest crime counts throughout all reporting periods, whereas **Homicide** recorded the fewest.
+
+**Figure 2** compares total person crimes and total property crimes across reporting periods. Property crimes accounted for a substantially larger proportion of reported incidents than person crimes during all three reporting periods. Person crimes increased from **343 incidents** in Period 1 to **365 incidents** in Period 2 before declining to **341 incidents** in Period 3. Property crimes exhibited a larger overall decline, decreasing from **1,586 incidents** in Period 1 to **1,572 incidents** in Period 2 and **1,320 incidents** in Period 3. These findings suggest that changes in property crime categories played a larger role in influencing overall crime trends within the West Bureau.
+
+**Table 2** and **Figure 3** provide a detailed examination of percentage changes across offense categories. Between **Period 1** and **Period 2**, **Homicide** exhibited the largest relative increase (**+150.0%**), followed by **Rape** (**+35.0%**). **Aggravated Assaults** (**+6.5%**) and **Total Person Crimes** (**+6.4%**) also increased during this period. In contrast, several property crime categories experienced small declines or remained relatively stable.
+
+Between **Period 2** and **Period 3**, the majority of offenses declined. **Homicide** experienced the largest relative decrease (**−40.0%**), although the absolute change represented only two fewer incidents. Among higher-frequency offenses, **Larceny Theft Offenses** (**−19.5%**), **Theft from Motor Vehicles** (**TFMV**) (**−18.8%**), **Motor Vehicle Theft** (**−8.8%**), and **Burglary/Breaking and Entering** (**−8.2%**) demonstrated notable declines. **Rape** (**+11.1%**) and **Robbery** (**+4.8%**) were among the few offense categories that increased during the most recent reporting period.
+
+Overall, the results indicate that crime trends within the West Bureau varied by offense category. Person crimes generally fluctuated modestly across reporting periods, while several major property crime categories experienced larger decreases during Period 3. These declines contributed substantially to the overall reduction in reported crime observed during the most recent reporting period.
+
+```{r}
+# Table 1: Crime Counts Across Reporting Periods (Summary Table)
+library(knitr)
+
+results_table <- crimestats %>%
+  select(
+    offense,
+    period1,
+    period2,
+    period3
+  )
+
+kable(
+  results_table,
+  caption = "Crime counts by offense category across reporting periods."
+)
+
+# Figure 1: Person vs Property Crimes across reporting periods 
+crime_groups <- crimestats_long %>%
+  filter(
+    offense %in% c(
+      "Total Person Crimes",
+      "Total Property Crimes"
+    )
+  )
+
+ggplot(
+  crime_groups,
+  aes(
+    x = period,
+    y = crime_count,
+    fill = offense
+  )
+) +
+  geom_col(
+    position = "dodge"
+  ) +
+  labs(
+    title = "Person and Property Crime Totals Across Reporting Periods",
+    x = "Reporting Period",
+    y = "Crime Count",
+    fill = "Crime Group"
+  ) +
+  theme_minimal() +
+  theme(
+    plot.title = element_text(
+      hjust = 0.5,
+      face = "bold"
+    )
+  )
+
+# Table 2: Percent Change by Offense
+pct_table <- crimestats %>%
+  select(
+    offense,
+    pct_change_p2_p1,
+    pct_change_p3_p2
+  )
+
+kable(
+  pct_table,
+  digits = 1,
+  caption = "Percent change in crime counts between reporting periods."
+)
+
+# Reshape the percent-change variables
+pct_changes_long <- crimestats %>%
+  select(
+    offense,
+    pct_change_p2_p1,
+    pct_change_p3_p2
+  ) %>%
+  filter(
+    !offense %in% c(
+      "Total Person Crimes",
+      "Total Property Crimes",
+      "Total Persons & Property Crimes"
+    )
+  ) %>%
+  pivot_longer(
+    cols = c(pct_change_p2_p1, pct_change_p3_p2),
+    names_to = "comparison",
+    values_to = "percent_change"
+  ) %>%
+  mutate(
+    comparison = recode(
+      comparison,
+      "pct_change_p2_p1" = "Period 1 → Period 2",
+      "pct_change_p3_p2" = "Period 2 → Period 3"
+    )
+  )
+
+# Figure 2: Percent Change by Offense (Largest increase/decrease)
+ggplot(
+  pct_changes_long,
+  aes(
+    x = reorder(offense, percent_change),
+    y = percent_change,
+    fill = comparison
+  )
+) +
+  geom_col(position = "dodge") +
+  coord_flip() +
+  labs(
+    title = "Percent Change in Crime Counts Across Reporting Periods",
+    x = "Offense Category",
+    y = "Percent Change (%)",
+    fill = "Comparison"
+  ) +
+  theme_minimal() +
+  theme(
+    plot.title = element_text(
+      hjust = 0.5,
+      face = "bold"
+    )
+  )
+```
+
+## Conclusion
+
+This project examined how major crime categories in the LAPD Operations-West Bureau changed across three consecutive COMPSTAT reporting periods: **Period 1** (July 26, 2026 to August 22, 2026), **Period 2** (August 23, 2026 to September 19, 2026), and **Period 3** (September 20, 2026 to October 17, 2026). After extracting and cleaning the bureau-level crime data, exploratory analyses and visualizations were used to examine crime patterns and changes over time.
+
+Property crimes occurred much more frequently than person crimes during all three reporting periods. Crime counts generally increased between the first reporting period and the second reporting period, followed by a decline during the most recent reporting period. Among the largest decreases between Period 2 and Period 3 were **Homicide** (**-40.0%**), **Larceny Theft Offenses** (**-19.5%**), and **Theft from Motor Vehicles** (**TFMV**) (**-18.8%**). In contrast, **Rape** (**+11.1%**) and **Robbery** (**+4.8%**) were among the few offense categories that increased during the most recent reporting period.
+
+The findings suggest that the overall decline in reported crime between **August 23, 2026** to **September 19, 2026** and **September 20, 2026** to **October 17, 2026** was primarily driven by reductions in several high-frequency property crime categories. While this analysis was limited to three reporting periods and does not explain the factors contributing to these changes, it provides a descriptive overview of recent crime patterns within the West Bureau and demonstrates how COMPSTAT reports can be used to evaluate short-term crime trends in Los Angeles.

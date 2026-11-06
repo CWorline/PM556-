@@ -1,0 +1,424 @@
+---
+title: "HW 3"
+author: "Caitlin Worline"
+format: html
+editor: visual
+embed-resources: true
+fig-height: 10
+---
+
+# Text Mining
+
+## Set Up
+
+```{r}
+library(readr)
+pubmed <- read_csv("pubmed.csv")
+```
+
+## Question 1
+
+How many abstracts are associated with each search term? Tokenize the abstracts and count the number of each token. Do you see anything interesting? What are the 5 most common tokens for each search term?
+
+### Summary
+
+- The five most common tokens showed a similar pattern across the different search terms, with general scientific and biomedical vocabulary appearing frequently. While some topic-specific terminology was present, common stop words made up a large portion of the most frequent tokens.
+
+```{r}
+# Abstract Counts
+library(tidyverse)
+
+abstract_counts <-
+  pubmed %>%
+  count(term, sort = TRUE)
+
+abstract_counts
+
+# Tokenize abstracts
+library(tidytext)
+
+tokens <-
+  pubmed %>%
+  select(term, abstract) %>%
+  unnest_tokens(word, abstract)
+
+tokens
+
+# Count all terms
+token_counts <-
+  tokens %>%
+  count(term, word, sort = TRUE)
+
+token_counts
+
+# Top 5 tokens for each term
+top5_tokens <-
+  token_counts %>%
+  group_by(term) %>%
+  slice_max(n, n = 5) %>%
+  arrange(term, desc(n))
+
+top5_tokens
+
+# Top 5 tokens visualization 
+top5_tokens %>%
+  mutate(word = reorder_within(word, n, term)) %>%
+  ggplot(aes(n, word, fill = term)) +
+  geom_col(show.legend = FALSE) +
+  facet_wrap(~term, scales = "free") +
+  scale_y_reordered() +
+  labs(
+    title = "Five Most Common Tokens by Search Term",
+    x = "Count",
+    y = NULL
+  ) +
+  theme_minimal()
+```
+
+## Question 2
+
+Does removing stop words change what tokens appear as the most frequent? What are the 5 most common tokens for each search term after removing stop words?
+
+### Summary
+
+- After removing the stop words, the disease-specific terminology become much more visible. Instead of generic English words dominating the rankings, medically relevant terms associated with each search topic emerge as the most frequent tokens.
+
+```{r}
+# Remove the stop words
+tidy_no_stop <-
+  tokens %>%
+  anti_join(stop_words, by = c("word"))
+
+# Top 5 words after removing stop words 
+top5_no_stop <-
+  tidy_no_stop %>%
+  count(term, word, sort = TRUE) %>%
+  group_by(term) %>%
+  slice_max(n, n = 5)
+
+top5_no_stop
+
+# Updated top 5 tokens visualization 
+top5_no_stop %>%
+  mutate(word = reorder_within(word, n, term)) %>%
+  ggplot(aes(n, word, fill = term)) +
+  geom_col(show.legend = FALSE) +
+  facet_wrap(~term, scales = "free") +
+  scale_y_reordered() +
+  labs(
+    title = "Top Tokens After Stop Word Removal",
+    x = "Count",
+    y = NULL
+  ) +
+  theme_minimal()
+```
+
+## Question 3
+
+Tokenize the abstracts into bigrams. Find the 10 most common bigrams and visualize them. - Common English stop words were removed prior to calculating bigram frequencies to improve interpretation of the resulting word pairs.
+
+```{r}
+# Create and clean Bigrams
+bigrams <-
+  pubmed %>%
+  unnest_tokens(
+    bigram,
+    abstract,
+    token = "ngrams",
+    n = 2
+  ) %>%
+  separate(
+    bigram,
+    into = c("word1", "word2"),
+    sep = " "
+  ) %>%
+  filter(
+    !word1 %in% stop_words$word,
+    !word2 %in% stop_words$word
+  ) %>%
+  unite(
+    bigram,
+    word1,
+    word2,
+    sep = " "
+  )
+
+head(bigrams)
+
+# Count Bigrams
+bigram_counts <-
+  bigrams %>%
+  count(
+    bigram,
+    sort = TRUE
+  )
+
+head(bigram_counts)
+
+# Identify the most common Bigrams
+top10_bigrams <-
+  bigram_counts %>%
+  slice_max(
+    n,
+    n = 10
+  )
+
+top10_bigrams
+
+# Top 10 Bigrams Visualization 
+top10_bigrams %>%
+  mutate(
+    bigram = reorder(
+      bigram,
+      n
+    )
+  ) %>%
+  ggplot(
+    aes(
+      x = n,
+      y = bigram
+    )
+  ) +
+  geom_col(
+    fill = "steelblue"
+  ) +
+  labs(
+    title = "Top 10 Most Common Bigrams",
+    x = "Count",
+    y = "Bigram"
+  ) +
+  theme_minimal()
+```
+
+## Question 4
+
+Calculate the TF-IDF value for each word-search term combination (here you want the search term to be the “document”). What are the 5 tokens from each search term with the highest TF-IDF value? How are the results different from the answers you got in Question 1?
+
+### Summary
+
+- The TF-IDF results differ from Question 1 because they highlight terms that are more distinctive and relevant to each search topic rather than simply identifying the most frequently occurring words. In Question 1, common scientific terms and general biomedical vocabulary appeared frequently across the abstracts. However, TF-IDF gives greater importance to words that are more specific to a particular topic and less common across the overall collection of abstracts.
+
+```{r}
+# Count words in each term 
+word_counts <-
+  tidy_no_stop %>%
+  count(term, word)
+
+# Calculate TF-IDF 
+tfidf_tbl <-
+  word_counts %>%
+  bind_tf_idf(
+    word,
+    term,
+    n
+  ) %>%
+  arrange(desc(tf_idf))
+
+tfidf_tbl
+
+# Top 5 terms per topic
+top_tfidf <-
+  tfidf_tbl %>%
+  group_by(term) %>%
+  slice_max(tf_idf, n = 5)
+
+top_tfidf
+
+# Top TF-IDF Visualization 
+top_tfidf %>%
+  mutate(
+    word =
+      reorder_within(
+        word,
+        tf_idf,
+        term
+      )
+  ) %>%
+  ggplot(
+    aes(
+      tf_idf,
+      word,
+      fill = term
+    )
+  ) +
+  geom_col(show.legend = FALSE) +
+  facet_wrap(~term, scales = "free") +
+  scale_y_reordered() +
+  labs(
+    title = "Top TF-IDF Terms by Search Topic",
+    x = "TF-IDF",
+    y = NULL
+  ) +
+  theme_minimal()
+```
+
+# Sentiment Analysis
+
+## Question 5
+
+Perform a sentiment analysis using the NRC lexicon. What is the most common sentiment for each search term? What if you remove "positive" and "negative" from the list?
+
+### Summary
+
+- When positive and negative sentiments were included, they accounted for the highest counts across most search topics. However, after removing them, more specific emotional patterns became visible. Fear was the most common remaining sentiment for COVID, meningitis, and prostate cancer, while disgust was most common for cystic fibrosis and anticipation was most common for preeclampsia.
+
+```{r}
+# Load NRC 
+nrc <- get_sentiments("nrc")
+
+# Join sentiment labels
+nrc_sentiment <-
+  tidy_no_stop %>%
+  inner_join(
+    nrc,
+    by = c("word")
+  )
+
+# Count sentiments
+sentiment_counts <-
+  nrc_sentiment %>%
+  count(
+    term,
+    sentiment,
+    sort = TRUE
+  )
+
+sentiment_counts
+
+# Common sentiments per term
+sentiment_counts %>%
+  group_by(term) %>%
+  slice_max(n, n = 1)
+
+# Most Common sentiment Plot
+sentiment_counts %>%
+  ggplot(
+    aes(
+      x = sentiment,
+      y = n,
+      fill = term
+    )
+  ) +
+  geom_col() +
+  facet_wrap(~term) +
+  coord_flip() +
+  labs(
+    title = "NRC Sentiment Counts by Search Term",
+    x = "Sentiment",
+    y = "Count"
+  ) +
+  theme_minimal()
+
+# Remove Positive & Negative
+sentiment_no_pn <-
+  nrc_sentiment %>%
+  filter(
+    !sentiment %in% c(
+      "positive",
+      "negative"
+    )
+  )
+
+# Count remaining sentiments
+sentiment_no_pn_counts <-
+  sentiment_no_pn %>%
+  count(
+    term,
+    sentiment,
+    sort = TRUE
+  )
+
+sentiment_no_pn_counts
+
+# Most common sentiments w/o + or -
+sentiment_no_pn_counts %>%
+  group_by(term) %>%
+  slice_max(
+    n,
+    n = 1
+  )
+
+# Sentiments w/o + or - Plot
+sentiment_no_pn_counts %>%
+  ggplot(
+    aes(
+      x = sentiment,
+      y = n,
+      fill = term
+    )
+  ) +
+  geom_col() +
+  facet_wrap(~term) +
+  coord_flip() +
+  labs(
+    title = "NRC Sentiments by Search Term (Excluding Positive and Negative)",
+    x = "Sentiment",
+    y = "Count"
+  ) +
+  theme_minimal()
+```
+
+## Question 6
+
+Perform a sentiment analysis using the AFINN lexicon to get an average positivity score for each abstract (hint: you may want to create a variable that indexes, or counts, the abstracts). Create a visualization that shows these scores grouped by search term. Are any search terms noticeably different from the others?
+
+### Summary
+
+- Yes, these terms are noticeably different. Cystic fibrosis stands out because it has the highest median sentiment score, which is slightly positive compared with the other search terms, whose median scores are slightly negative. Prostate cancer also has a noticeably narrower distribution, suggesting less variation in sentiment scores across its abstracts.
+
+```{r}
+# Create unique abstract IDs
+unique_pubmed <-
+  pubmed %>%
+  mutate(
+    abstract_id = row_number()
+  )
+
+# Tokenize abstracts
+afinn_tokens <-
+  unique_pubmed %>%
+  unnest_tokens(
+    word,
+    abstract
+  )
+
+# Join AFFIN lexicon
+afinn_scores <-
+  afinn_tokens %>%
+  inner_join(
+    get_sentiments("afinn"),
+    by = c("word")
+  )
+
+# Calculate AVG sentiment score per abstract
+abstract_sentiment <-
+  afinn_scores %>%
+  group_by(
+    abstract_id,
+    term
+  ) %>%
+  summarise(
+    mean_score = mean(value),
+    .groups = "drop"
+  )
+
+# AFINN Sentiment Visualization 
+ggplot(
+  abstract_sentiment,
+  aes(
+    x = term,
+    y = mean_score,
+    fill = term
+  )
+) +
+  geom_boxplot() +
+  labs(
+    title = "Average AFINN Sentiment Score by Search Term",
+    x = "Search Term",
+    y = "Average Sentiment Score"
+  ) +
+  theme_minimal() +
+  theme(
+    legend.position = "none"
+  )
+```

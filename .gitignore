@@ -2,3 +2,5 @@ Data/
 .RData
 .Rhistory
 .Rproj.user
+*.csv
+*.pdf

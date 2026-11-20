@@ -1,0 +1,17 @@
+---
+title: "Explore the Data"
+---
+
+## Interactive Data Exploration
+
+Explore patterns in physical inactivity and obesity among adults in the United States.
+
+This page will contain interactive visualizations created using R and Plotly.
+
+## Obesity and Physical Activity
+
+*Interactive graph will appear here.*
+
+## Demographic Comparisons
+
+*Interactive comparisons by age and sex will appear here.*

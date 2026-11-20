@@ -1,0 +1,32 @@
+---
+title: "Physical Inactivity and Obesity in America"
+subtitle: "Analysis of the 2024 CDC BRFSS"
+---
+
+## Introduction
+
+### Research Question
+
+How is leisure-time physical inactivity associated with obesity among U.S. adults, and does this relationship differ by age and sex?
+
+## Methods
+
+## Results
+
+### Obesity Prevalence by Physical Activity
+
+*Figure 1 will appear here.*
+
+### Differences Across Age Groups
+
+*Figure 2 will appear here.*
+
+### Differences by Sex
+
+*Figure 3 will appear here.*
+
+### Adjusted Associations
+
+*Figure 4 will appear here.*
+
+## Conclusion

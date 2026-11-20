@@ -1,0 +1,27 @@
+project:
+  type: website
+  output-dir: docs
+
+website:
+  title: "Movement Matters"
+  navbar:
+    background: "#142B42"
+    foreground: "#FFFFFF"
+    left:
+      - text: "Research Report"
+        href: index.qmd
+      - text: "About the Data"
+        href: about.qmd
+      - text: "Explore the Data"
+        href: explore.qmd
+
+format:
+  html:
+    theme:
+      - cosmo
+    css: styles.css
+    toc: true
+    toc-location: right
+
+editor: visual
+

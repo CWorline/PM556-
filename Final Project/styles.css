@@ -1,0 +1,49 @@
+/* Movement Matters Website */
+
+body {
+  background-color: #FFFFFF;
+  color: #263746;
+  font-family: Arial, sans-serif;
+  line-height: 1.7;
+}
+
+/* Headings */
+h1, h2, h3 {
+  color: #142B42;
+  font-weight: 600;
+}
+
+/* Navigation */
+.navbar {
+  background-color: #142B42 !important;
+}
+
+.navbar .nav-link,
+.navbar .navbar-brand {
+  color: #FFFFFF !important;
+}
+
+.navbar .nav-link:hover {
+  color: #7DD3C7 !important;
+}
+
+/* Links */
+a {
+  color: #287F83;
+}
+
+/* Main content */
+main {
+  max-width: 1000px;
+}
+
+/* Tables */
+table {
+  width: 100%;
+}
+
+/* Figure captions */
+figcaption {
+  color: #596B78;
+  font-size: 0.9rem;
+}

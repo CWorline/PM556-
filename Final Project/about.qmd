@@ -1,0 +1,23 @@
+---
+title: "About the Data"
+---
+
+## Data Source
+
+The dataset for this project comes from the 2024 Behavioral Risk Factor Surveillance System (BRFSS), conducted by the CDC.
+
+## Data Acquisition
+
+This section will describe how the original dataset was obtained.
+
+## Data Cleaning and Preparation
+
+This section will document variable selection, recoding, missing values, and data preparation.
+
+## Exploratory Data Analysis
+
+Exploratory plots and descriptive summaries will be presented here.
+
+## Survey Design
+
+This section will explain the survey weights and design variables used in the analysis.

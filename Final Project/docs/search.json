@@ -1,0 +1,107 @@
+[
+  {
+    "objectID": "index.html",
+    "href": "index.html",
+    "title": "Physical Inactivity and Obesity in America",
+    "section": "",
+    "text": "How is leisure-time physical inactivity associated with obesity among U.S. adults, and does this relationship differ by age and sex?"
+  },
+  {
+    "objectID": "index.html#introduction",
+    "href": "index.html#introduction",
+    "title": "Physical Inactivity and Obesity in America",
+    "section": "",
+    "text": "How is leisure-time physical inactivity associated with obesity among U.S. adults, and does this relationship differ by age and sex?"
+  },
+  {
+    "objectID": "index.html#methods",
+    "href": "index.html#methods",
+    "title": "Physical Inactivity and Obesity in America",
+    "section": "Methods",
+    "text": "Methods"
+  },
+  {
+    "objectID": "index.html#results",
+    "href": "index.html#results",
+    "title": "Physical Inactivity and Obesity in America",
+    "section": "Results",
+    "text": "Results\n\nObesity Prevalence by Physical Activity\nFigure 1 will appear here.\n\n\nDifferences Across Age Groups\nFigure 2 will appear here.\n\n\nDifferences by Sex\nFigure 3 will appear here.\n\n\nAdjusted Associations\nFigure 4 will appear here."
+  },
+  {
+    "objectID": "index.html#conclusion",
+    "href": "index.html#conclusion",
+    "title": "Physical Inactivity and Obesity in America",
+    "section": "Conclusion",
+    "text": "Conclusion"
+  },
+  {
+    "objectID": "explore.html",
+    "href": "explore.html",
+    "title": "Explore the Data",
+    "section": "",
+    "text": "Explore patterns in physical inactivity and obesity among adults in the United States.\nThis page will contain interactive visualizations created using R and Plotly."
+  },
+  {
+    "objectID": "explore.html#interactive-data-exploration",
+    "href": "explore.html#interactive-data-exploration",
+    "title": "Explore the Data",
+    "section": "",
+    "text": "Explore patterns in physical inactivity and obesity among adults in the United States.\nThis page will contain interactive visualizations created using R and Plotly."
+  },
+  {
+    "objectID": "explore.html#obesity-and-physical-activity",
+    "href": "explore.html#obesity-and-physical-activity",
+    "title": "Explore the Data",
+    "section": "Obesity and Physical Activity",
+    "text": "Obesity and Physical Activity\nInteractive graph will appear here."
+  },
+  {
+    "objectID": "explore.html#demographic-comparisons",
+    "href": "explore.html#demographic-comparisons",
+    "title": "Explore the Data",
+    "section": "Demographic Comparisons",
+    "text": "Demographic Comparisons\nInteractive comparisons by age and sex will appear here."
+  },
+  {
+    "objectID": "about.html",
+    "href": "about.html",
+    "title": "About the Data",
+    "section": "",
+    "text": "The dataset for this project comes from the 2024 Behavioral Risk Factor Surveillance System (BRFSS), conducted by the CDC."
+  },
+  {
+    "objectID": "about.html#data-source",
+    "href": "about.html#data-source",
+    "title": "About the Data",
+    "section": "",
+    "text": "The dataset for this project comes from the 2024 Behavioral Risk Factor Surveillance System (BRFSS), conducted by the CDC."
+  },
+  {
+    "objectID": "about.html#data-acquisition",
+    "href": "about.html#data-acquisition",
+    "title": "About the Data",
+    "section": "Data Acquisition",
+    "text": "Data Acquisition\nThis section will describe how the original dataset was obtained."
+  },
+  {
+    "objectID": "about.html#data-cleaning-and-preparation",
+    "href": "about.html#data-cleaning-and-preparation",
+    "title": "About the Data",
+    "section": "Data Cleaning and Preparation",
+    "text": "Data Cleaning and Preparation\nThis section will document variable selection, recoding, missing values, and data preparation."
+  },
+  {
+    "objectID": "about.html#exploratory-data-analysis",
+    "href": "about.html#exploratory-data-analysis",
+    "title": "About the Data",
+    "section": "Exploratory Data Analysis",
+    "text": "Exploratory Data Analysis\nExploratory plots and descriptive summaries will be presented here."
+  },
+  {
+    "objectID": "about.html#survey-design",
+    "href": "about.html#survey-design",
+    "title": "About the Data",
+    "section": "Survey Design",
+    "text": "Survey Design\nThis section will explain the survey weights and design variables used in the analysis."
+  }
+]

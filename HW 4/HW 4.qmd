@@ -1,0 +1,309 @@
+---
+title: "HW 4"
+author: "Caitlin Worline"
+format: html
+editor: visual
+embed-resources: true
+fig-height: 10
+---
+
+# HPC
+
+## Question 1. Find the total for each row of a numeric matrix. Output should be a vector with length equal to the number of rows of the input matrix.
+
+```{r}
+# Total for each row
+fun1 <- function(mat) {
+  n <- nrow(mat)
+  ans <- double(n) 
+  for (i in 1:n) {
+    ans[i] <- sum(mat[i, ])
+  }
+  ans
+}
+
+fun1alt <- function(mat) {
+  rowSums(mat)
+}
+```
+
+## Generate synthetic data (dat):
+
+```{r}
+# Use the functions with this data
+set.seed(2315)
+dat <- matrix(rnorm(200 * 100), nrow = 200)
+
+# Verify if both are equal
+all.equal(fun1(dat), fun1alt(dat))
+```
+
+```{r}
+# Benchmark
+library(microbenchmark)
+
+bm1 <- microbenchmark(
+  Original = fun1(dat),
+  Vectorized = fun1alt(dat),
+  times = 100
+)
+
+bm1
+
+# Visualization 
+library(ggplot2)
+
+autoplot(bm1)
+```
+
+## Question 2. Calculate the running (cumulative) total along each row of a numeric matrix. Output should be a matrix with dimensions equal to the input matrix.
+
+```{r}
+# running cumulative sum by row
+fun2 <- function(mat) {
+  n <- nrow(mat)
+  k <- ncol(mat)
+  ans <- mat
+  for (i in 1:n) {
+    for (j in 2:k) {
+      ans[i,j] <- mat[i, j] + ans[i, j - 1]
+    }
+  }
+  ans
+}
+
+fun2alt <- function(mat) {
+  t(apply(mat, 1, cumsum))
+}
+```
+
+## Generate synthetic data (dat):
+
+```{r}
+# Use the functions with this data
+set.seed(2315)
+dat <- matrix(rnorm(200 * 100), nrow = 200)
+
+# Verify both are similar
+all.equal(fun2(dat), fun2alt(dat))
+```
+
+```{r}
+# Benchmark 
+bm2 <- microbenchmark(
+  Original = fun2(dat),
+  Vectorized = fun2alt(dat),
+  times = 100
+)
+
+bm2
+
+# Visualization 
+autoplot(bm2)
+```
+
+## Question 3. Parallelize a process for computationally estimating the value of 𝜋.
+
+```{r}
+sim_pi <- function(n = 1000, i = NULL) {
+  p <- matrix(runif(n*2), ncol = 2)
+  mean(rowSums(p^2) < 1) * 4
+}
+
+# Here is an example of the run
+set.seed(156)
+sim_pi(1000) # 3.132
+```
+
+### Run this function multiple times and take the mean
+
+```{r}
+# This runs the simulation a 4,000 times, each with 10,000 points
+set.seed(1231)
+system.time({
+  ans <- unlist(lapply(1:4000, sim_pi, n = 10000))
+  print(mean(ans))
+})
+
+# YOUR CODE HERE
+set.seed(1231)
+
+seq_time <- system.time({
+  ans_seq <- unlist(
+    lapply(1:4000, sim_pi, n = 10000)
+  )
+
+  print(mean(ans_seq))
+})
+```
+
+```{r}
+# Parallel Version 
+library(parallel)
+
+cores <- detectCores() - 1
+
+
+# Parallel Version
+library(parallel)
+
+cores <- detectCores() - 1
+
+cl <- makeCluster(cores)
+
+clusterExport(cl, "sim_pi")
+
+clusterSetRNGStream(cl, iseed = 1231)
+
+par_time <- system.time({
+
+  ans_par <- unlist(
+    parLapply(cl,
+              X = 1:4000,
+              fun = sim_pi,
+              n = 10000)
+  )
+
+  print(mean(ans_par))
+
+})
+
+stopCluster(cl)
+```
+
+```{r}
+# Compare pi estimates
+pi_results <- data.frame(
+  estimate = c(ans_seq, ans_par),
+  method = c(
+    rep("Sequential", length(ans_seq)),
+    rep("Parallel", length(ans_par))
+  )
+)
+
+# Comparison Boxplot
+ggplot(pi_results,
+       aes(x = method,
+           y = estimate,
+           fill = method)) +
+  geom_boxplot() +
+  labs(
+    title = "Distribution of Pi Estimates",
+    x = "Method",
+    y = "Estimated Pi"
+  ) +
+  theme_minimal()
+```
+
+```{r}
+# Compare Runtime
+runtime_df <- data.frame(
+  Method = c("Sequential", "Parallel"),
+  Seconds = c(seq_time["elapsed"],
+              par_time["elapsed"])
+)
+
+# Comparison Boxplot
+ggplot(runtime_df,
+       aes(x = Method,
+           y = Seconds,
+           fill = Method)) +
+  geom_col() +
+  labs(
+    title = "Runtime Comparison",
+    y = "Elapsed Time (seconds)"
+  ) +
+  theme_minimal()
+```
+
+# SQL
+
+### Setup a temporary database of movie data by running the following code chunk
+
+```{r}
+# install.packages(c("RSQLite", "DBI"))
+
+library(RSQLite)
+library(DBI)
+
+# Initialize a temporary in memory database
+con <- dbConnect(SQLite(), ":memory:")
+
+# Download tables
+film <- read.csv("https://raw.githubusercontent.com/ivanceras/sakila/master/csv-sakila-db/film.csv")
+film_category <- read.csv("https://raw.githubusercontent.com/ivanceras/sakila/master/csv-sakila-db/film_category.csv")
+category <- read.csv("https://raw.githubusercontent.com/ivanceras/sakila/master/csv-sakila-db/category.csv")
+
+# Copy data.frames to database
+dbWriteTable(con, "film", film)
+dbWriteTable(con, "film_category", film_category)
+dbWriteTable(con, "category", category)
+```
+
+## Question 4. How many movies are available in each rating category?
+
+```{r}
+dbGetQuery(
+  con,
+  "
+  SELECT
+      rating,
+      COUNT(*) AS n_movies
+  FROM film
+  GROUP BY rating
+  ORDER BY n_movies DESC
+  "
+)
+```
+
+## Question 5. What is the average replacement cost and rental rate for each rating category?
+
+```{r}
+dbGetQuery(
+  con,
+  "
+  SELECT
+      rating,
+      AVG(replacement_cost) AS avg_replacement_cost,
+      AVG(rental_rate) AS avg_rental_rate
+  FROM film
+  GROUP BY rating
+  "
+)
+```
+
+## Question 6. Use table film_category together with film to find how many films there are with each category ID.
+
+```{r}
+dbGetQuery(
+  con,
+  "
+  SELECT
+      fc.category_id,
+      COUNT(*) AS n_films
+  FROM film_category fc
+  INNER JOIN film f
+      ON fc.film_id = f.film_id
+  GROUP BY fc.category_id
+  ORDER BY n_films DESC
+  "
+)
+```
+
+## Question 7. Incorporate the category table into the answer to the previous question to find the name of the most popular category.
+
+```{r}
+dbGetQuery(
+  con,
+  "
+  SELECT
+      c.name,
+      COUNT(*) AS n_films
+  FROM film_category fc
+  INNER JOIN category c
+      ON fc.category_id = c.category_id
+  GROUP BY c.category_id, c.name
+  ORDER BY n_films DESC
+  "
+)
+```
